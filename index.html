@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sr. Pinguino y Masters Jr.</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
+        :root {
+            --primary-bg: #1f1d36;
+            --container-bg: #29264f;
+            --primary-border: #9b59b6;
+            --accent-color: #f7d24a;
+            --text-color: #f1f1f1;
+            --life-color: #2ecc71;
+            --mood-color: #f1c40f;
+            --temp-color: #e74c3c;
+            --illness-color: #3498db;
+        }
+
+        body {
+            font-family: 'Comic Neue', cursive;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .game-container {
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 0 30px var(--primary-border);
+            border: 2px solid var(--primary-border);
+            width: 100%;
+            max-width: 900px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .main-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--accent-color);
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            padding-top: 20px;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .main-game-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .left-column, .right-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-panel {
+            background: #201e3b;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 2px solid var(--primary-border);
+        }
+
+        .baby-area {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        #baby-display {
+            width: 250px;
+            height: 250px;
+            background-color: #ffdab9;
+            border-radius: 25px;
+            border: 5px solid var(--primary-border);
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .shivering { animation: shake 0.5s infinite; }
+        .sweating { filter: brightness(1.2); }
+        .crying { animation: pulse 1s infinite; }
+        .asleep { filter: brightness(0.5); }
+        .angry { animation: shake 0.5s infinite; filter: hue-rotate(90deg); }
+        .sad { filter: grayscale(100%); }
+        .surprised { animation: bounce 0.5s infinite; }
+        .ill { filter: sepia(100%) hue-rotate(20deg); }
+        .very-ill { filter: sepia(100%) hue-rotate(20deg) contrast(0.8); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .speech-bubble {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #1f2937;
+            border: 2px solid var(--primary-border);
+            border-radius: 20px;
+            padding: 10px 15px;
+            max-width: 150px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: opacity 0.5s, transform 0.5s;
+            z-index: 10;
+            display: none;
+        }
+
+        .decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .decoration-item {
+            position: absolute;
+            background-color: #ccc;
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: transform 0.5s;
+            pointer-events: all;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .decoration-item.manta { background-color: #8e44ad; }
+        .decoration-item.adorno { background-color: #e74c3c; }
+        .decoration-item.ventilador { background-color: #3498db; }
+        .decoration-item.peluche { background-color: #f39c12; }
+        .decoration-item.aireAcondicionado { background-color: #bdc3c7; }
+        .decoration-item.almohadita { background-color: #ecf0f1; color: #2c3e50; }
+
+        .stat-bar-group {
+            width: 100%;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .stat-bar-group label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-bar {
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 9999px;
+        }
+
+        #life-fill { background-color: var(--life-color); }
+        #mood-fill { background-color: var(--mood-color); }
+        #temp-fill { background-color: var(--temp-color); }
+        #illness-fill { background-color: var(--illness-color); }
+
+        .interaction-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            width: 100%;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-button, .shop-item-button, .minigame-stats, .use-item-button {
+            background-color: var(--primary-border);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px #4b1a64;
+        }
+
+        .action-button {
+            background-color: var(--primary-border);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px #4b1a64;
+        }
+
+        .game-button:hover, .shop-item-button:hover, .action-button:hover, .use-item-button:hover {
+            transform: translateY(2px);
+            box-shadow: 0 2px #4b1a64;
+        }
+        .game-button:active, .shop-item-button:active, .action-button:active, .use-item-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 #4b1a64;
+        }
+        .game-button:disabled, .shop-item-button:disabled, .action-button:disabled, .use-item-button:disabled {
+            background-color: #9b9a9d;
+            cursor: not-allowed;
+            box-shadow: 0 4px #7a7a7a;
+        }
+
+        .minigame-stats {
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .chat-area {
+            width: 100%;
+            margin-top: 2rem;
+        }
+        .chat-area input {
+            width: calc(100% - 70px);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #d1d5db;
+        }
+        .chat-area button {
+            width: 60px;
+            background-color: #34d399;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .chat-output {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #1f1d36;
+            border-radius: 5px;
+            min-height: 100px;
+            overflow-y: auto;
+            border: 1px solid var(--primary-border);
+        }
+        .chat-user { font-weight: bold; color: #f7d24a; }
+        .chat-baby { font-style: italic; color: #9b59b6; }
+        .chat-loading { font-style: italic; color: #888; }
+        .daily-report-item {
+            margin-bottom: 0.5rem;
+        }
+        .daily-report-item span {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .time-panel {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .time-box {
+            background: #201e3b;
+            border: 2px solid var(--primary-border);
+            border-radius: 10px;
+            padding: 1rem;
+            flex-grow: 1;
+        }
+
+        .time-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-shadow: 0 0 5px var(--accent-color);
+        }
+
+        .api-input-container {
+            margin-top: 1rem;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .api-input-container input {
+            flex-grow: 1;
+        }
+
+        #minigame-canvas {
+            background-color: #333;
+            border-radius: 10px;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin: 1rem 0;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            aspect-ratio: 16/9;
+        }
+
+        @media (max-width: 600px) {
+            .game-container { padding: 1rem; }
+            .main-game-layout {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .left-column, .right-column { padding: 0; }
+            .game-button { padding: 10px; font-size: 0.9rem; }
+            .time-panel { flex-direction: column; }
+            .chat-area { margin-top: 1rem; }
+            .baby-area { margin-bottom: 1rem; }
+            .info-panel { margin-bottom: 1rem; }
+        }
+
+        .image-selection-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .image-selection {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+        .image-option {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .image-option.selected {
+            border-color: var(--accent-color);
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div id="start-screen" class="screen active">
+        <h1 class="main-title">¡Bienvenido, Sr. Pinguino!</h1>
+        <p class="subtitle">Elige una foto para Masters Jr. o sube la tuya.</p>
+        <div class="image-selection-container">
+            <div class="image-selection">
+                <img id="masters1-option" src="Masters1.png" class="image-option selected" alt="Masters Jr. por defecto 1">
+                <img id="masters2-option" src="Masters2.png" class="image-option" alt="Masters Jr. por defecto 2">
+            </div>
+            <p>O sube una imagen:</p>
+            <input type="file" id="baby-upload" accept="image/*" style="margin-bottom: 1rem; color: white;">
+            <div class="baby-area" style="margin-bottom: 2rem;">
+                <img id="start-baby-preview" style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid var(--primary-border); object-fit: cover;" src="Masters1.png">
+            </div>
+        </div>
+        <button id="start-game-button" class="game-button">Empezar a cuidar</button>
+        <p style="margin-top: 2rem;">juego de K.J games</p>
+    </div>
+
+    <div id="main-game-screen" class="screen">
+        <div class="title-container">
+            <h1 class="main-title">El Gran Juego de Sr. Pinguino</h1>
+            <p class="subtitle">Cuida a Masters Jr. para mantenerla feliz y sana.</p>
+        </div>
+
+        <div class="main-game-layout">
+            <div class="left-column">
+                <div class="info-panel baby-area">
+                    <div id="speech-bubble" class="speech-bubble"></div>
+                    <img id="baby-display" src="Masters1.png" alt="Masters Jr.">
+                    <div id="decorations-container" class="decorations"></div>
+                </div>
+
+                <div class="info-panel stats-panel">
+                    <div class="stat-bar-group">
+                        <label for="life-bar">Vida</label>
+                        <div id="life-bar" class="stat-bar">
+                            <div id="life-fill" class="stat-fill"></div>
+                        </div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <label for="mood-bar">Ánimo</label>
+                        <div id="mood-bar" class="stat-bar">
+                            <div id="mood-fill" class="stat-fill"></div>
+                        </div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <label for="temp-bar">Temperatura</label>
+                        <div id="temp-bar" class="stat-bar">
+                            <div id="temp-fill" class="stat-fill" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <label for="illness-bar">Enfermedad</label>
+                        <div id="illness-bar" class="stat-bar">
+                            <div id="illness-fill" class="stat-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="interaction-buttons">
+                    <button id="feed-button" class="action-button">Dar bibe 🍼</button>
+                    <button id="fresh-pap-button" class="action-button">Dar papilla 🥣</button>
+                    <button id="diaper-button" class="action-button">Pañal 💩</button>
+                    <button id="bathe-button" class="action-button">Bañar 🛀</button>
+                    <button id="sleep-button" class="action-button">Dormir 😴</button>
+                    <button id="play-button" class="action-button">Jugar 🧸</button>
+                    <button id="tuck-in-button" class="action-button">Arropar 🛌</button>
+                    <button id="minigame-button" class="action-button">Minijuego 🎮</button>
+                    <button id="shop-button" class="action-button">Tienda 🛒</button>
+                    <button id="use-potion-button" class="use-item-button" data-item="pocimaCumpleanios" style="display: none;">Usar pócima ✨</button>
+                    <button id="toggle-ac-button" class="use-item-button" data-item="aireAcondicionado" style="display: none;">AC On/Off</button>
+                    <button id="use-diagnosis-button" class="use-item-button" data-item="diagnostico" style="display: none;">Parking Diagnóstico</button>
+                    <button id="use-medicine-button" class="use-item-button" data-item="medicina" style="display: none;">Dar Medicina</button>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="time-panel">
+                    <div class="info-panel time-box">
+                        <p class="time-label">Día</p>
+                        <p id="day-display" class="time-value">1</p>
+                    </div>
+                    <div class="info-panel time-box">
+                        <p class="time-label">Hora</p>
+                        <p id="time-display" class="time-value">00:00</p>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h3>Informe diario de Masters Jr.</h3>
+                    <div id="daily-report-panel">
+                    </div>
+                </div>
+
+                <div class="info-panel chat-area">
+                    <h3>Habla con Masters Jr.</h3>
+                    <p>Puntos: <span id="points-display">0</span></p>
+                    <div class="api-input-container">
+                        <input type="password" id="api-key-input" placeholder="Pega tu clave de API aquí...">
+                        <button id="save-api-key-button" class="game-button" style="padding: 10px;">Guardar</button>
+                    </div>
+                    <div id="chat-output" class="chat-output"></div>
+                    <div style="display: flex; margin-top: 10px; gap: 5px;">
+                        <input type="text" id="chat-input" placeholder="Escribe un mensaje..." style="flex-grow: 1; padding: 10px; border-radius: 5px; border: none;">
+                        <button id="send-chat-button" class="game-button" style="padding: 10px;">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="minigame-screen" class="screen">
+        <h2 class="main-title">Minijuego: ¡La aventura de Masters Jr.!</h2>
+        <canvas id="minigame-canvas"></canvas>
+        <div class="minigame-stats" style="color: white; margin-top: 1rem; display: flex; gap: 2rem;">
+            <p>Puntos: <span id="minigame-points">0</span></p>
+        </div>
+        <button id="jump-button" class="game-button" style="margin-top: 1rem;">Saltar</button>
+        <button id="exit-minigame" class="game-button" style="margin-top: 1rem;">Volver al juego</button>
+    </div>
+
+    <div id="shop-screen" class="screen">
+        <h2 class="main-title">Tienda del Sr. Pinguino</h2>
+        <p style="color: white;">Puntos disponibles: <span id="shop-points-display">0</span></p>
+        <div class="shop-grid">
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="biberon" data-cost="5">
+                    Biberón Extra<br>(+10 vida)<br>5 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="diaper" data-cost="5">
+                    Pañal Extra<br>(+10 ánimo)<br>5 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="manta" data-cost="15">
+                    Manta Cálida<br>(+Temp)<br>15 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="adorno" data-cost="20">
+                    Adorno de Cuna<br>(+10 ánimo)<br>20 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="ventilador" data-cost="10">
+                    Ventilador<br>(Estabiliza Temp)<br>10 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="peluche" data-cost="5">
+                    Peluche<br>(+5 ánimo pasivo)<br>5 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="aireAcondicionado" data-cost="25">
+                    Aire Acondicionado<br>(Baja Temp)<br>25 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="almohadita" data-cost="10">
+                    Almohadita<br>(+Vida y Animo Durmiendo)<br>10 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="pocimaCumpleanios" data-cost="50">
+                    Pócima Cumpleaños<br>(+365 días)<br>50 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="papillaFresca" data-cost="8">
+                    Papilla Fresca<br>(+20 vida)<br>8 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="diagnostico" data-cost="30">
+                    Parking Diagnóstico<br>(Detecta enfermedad)<br>30 pts
+                </button>
+            </div>
+            <div class="shop-item">
+                <button class="shop-item-button" data-item="medicina" data-cost="25">
+                    Medicina<br>(Cura enfermedades)<br>25 pts
+                </button>
+            </div>
+        </div>
+        <button id="back-to-game" class="game-button" style="margin-top: 1rem;">Volver</button>
+    </div>
+
+    <div id="death-screen" class="screen">
+        <h1 class="main-title">¡Oh, no!</h1>
+        <p style="color: white;">Masters Jr. ha muerto...</p>
+        <p style="color: white;">No la cuidaste lo suficiente. 😥</p>
+        <button id="restart-game" class="game-button">Volver a empezar</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=';
+    const STORAGE_KEY = 'mastersJrGameData';
+
+    const startScreen = document.getElementById('start-screen');
+    const mainGameScreen = document.getElementById('main-game-screen');
+    const minigameScreen = document.getElementById('minigame-screen');
+    const shopScreen = document.getElementById('shop-screen');
+    const deathScreen = document.getElementById('death-screen');
+
+    const babyUpload = document.getElementById('baby-upload');
+    const startBabyPreview = document.getElementById('start-baby-preview');
+    const masters1Option = document.getElementById('masters1-option');
+    const masters2Option = document.getElementById('masters2-option');
+    const startGameButton = document.getElementById('start-game-button');
+
+    const lifeFill = document.getElementById('life-fill');
+    const moodFill = document.getElementById('mood-fill');
+    const tempFill = document.getElementById('temp-fill');
+    const illnessFill = document.getElementById('illness-fill');
+    const pointsDisplay = document.getElementById('points-display');
+    const dayDisplay = document.getElementById('day-display');
+    const timeDisplay = document.getElementById('time-display');
+    const babyDisplay = document.getElementById('baby-display');
+    const speechBubble = document.getElementById('speech-bubble');
+    const decorationsContainer = document.getElementById('decorations-container');
+    const dailyReportPanel = document.getElementById('daily-report-panel');
+
+    const feedButton = document.getElementById('feed-button');
+    const freshPapButton = document.getElementById('fresh-pap-button');
+    const batheButton = document.getElementById('bathe-button');
+    const diaperButton = document.getElementById('diaper-button');
+    const playButton = document.getElementById('play-button');
+    const sleepButton = document.getElementById('sleep-button');
+    const tuckInButton = document.getElementById('tuck-in-button');
+    const shopButton = document.getElementById('shop-button');
+    const minigameButton = document.getElementById('minigame-button');
+    const usePotionButton = document.getElementById('use-potion-button');
+    const toggleAcButton = document.getElementById('toggle-ac-button');
+    const useDiagnosisButton = document.getElementById('use-diagnosis-button');
+    const useMedicineButton = document.getElementById('use-medicine-button');
+
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyButton = document.getElementById('save-api-key-button');
+    const chatInput = document.getElementById('chat-input');
+    const sendChatButton = document.getElementById('send-chat-button');
+    const chatOutput = document.getElementById('chat-output');
+
+    const shopPointsDisplay = document.getElementById('shop-points-display');
+    const backToGameButton = document.getElementById('back-to-game');
+    const buyItemButtons = document.querySelectorAll('.shop-item-button');
+
+    const minigameCanvas = document.getElementById('minigame-canvas');
+    const ctx = minigameCanvas.getContext('2d');
+    const exitMinigameButton = document.getElementById('exit-minigame');
+    const minigamePointsDisplay = document.getElementById('minigame-points');
+    const jumpButton = document.getElementById('jump-button');
+
+    const restartGameButton = document.getElementById('restart-game');
+
+    let gameState = {};
+    let gameInterval;
+    let timeInterval;
+    let speechBubbleTimeout;
+    let dialogueInterval;
+    let chatApiKey = "";
+    let isAC_on = false;
+    let chatHistory = [];
+    const minTempDrift = 0.5;
+    const maxTempDrift = 1.5;
+
+    const itemNames = {
+        biberon: 'Biberón',
+        diaper: 'Pañal',
+        manta: 'Manta',
+        adorno: 'Adorno',
+        ventilador: 'Ventilador',
+        peluche: 'Peluche',
+        aireAcondicionado: 'Aire Acondicionado',
+        almohadita: 'Almohadita',
+        pocimaCumpleanios: 'Pócima de Cumpleaños',
+        papillaFresca: 'Papilla Fresca',
+        diagnostico: 'Parking Diagnóstico',
+        medicina: 'Medicina'
+    };
+
+    const decorationEmojis = {
+        'manta': '🛌',
+        'adorno': '🎉',
+        'ventilador': '💨',
+        'peluche': '🧸',
+        'aireAcondicionado': '❄️',
+        'almohadita': '😴'
+    };
+
+    const itemCosts = {
+        biberon: 5,
+        diaper: 5,
+        manta: 15,
+        adorno: 20,
+        ventilador: 10,
+        peluche: 5,
+        aireAcondicionado: 25,
+        almohadita: 10,
+        pocimaCumpleanios: 50,
+        papillaFresca: 8,
+        diagnostico: 30,
+        medicina: 25
+    };
+
+    const diseases = {
+        cold: {
+            name: "Resfriado Común",
+            effects: { lifeDecay: 0.1, moodDecay: 0.2, tempDrift: 2.0 },
+            cure: "arropar",
+            dialogue: "Tengo la nariz tapada... 🤧"
+        },
+        stomachFlu: {
+            name: "Gastroenteritis",
+            effects: { lifeDecay: 0.2, moodDecay: 0.3, feedIneffective: true },
+            cure: "papillaFresca",
+            dialogue: "Me duele la barriga... 🤢"
+        },
+        fever: {
+            name: "Fiebre Alta",
+            effects: { lifeDecay: 0.15, moodDecay: 0.15, tempDrift: -2.0 },
+            cure: "bañar",
+            dialogue: "¡Estoy ardiendo, papi! 🔥"
+        }
+    };
+
+    function initGame() {
+        const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        const savedApiKey = localStorage.getItem('chatApiKey');
+        if (savedState) {
+            gameState = savedState;
+            updateUI();
+            startMainGame();
+        } else {
+            resetGameState();
+            showScreen(startScreen);
+        }
+        if (savedApiKey) {
+            chatApiKey = savedApiKey;
+            apiKeyInput.value = savedApiKey;
+            chatOutput.innerHTML += `<p style="color: #34d399; font-style: italic;">Clave de API cargada. ¡Puedes chatear!</p>`;
+        }
+    }
+
+    function resetGameState() {
+        gameState = {
+            life: 100,
+            mood: 100,
+            temp: 50,
+            illness: 0,
+            points: 0,
+            day: 1,
+            time: 0,
+            isSleeping: false,
+            lastActionTime: {
+                fed: 0,
+                bathed: 0,
+                diapered: 0,
+                played: 0,
+                slept: 0,
+                tuckIn: 0
+            },
+            babyImage: "Masters1.png",
+            inventory: {
+                manta: 0,
+                adorno: 0,
+                ventilador: 0,
+                peluche: 0,
+                aireAcondicionado: 0,
+                almohadita: 0,
+                pocimaCumpleanios: 0,
+                papillaFresca: 0,
+                diagnostico: 0,
+                medicina: 0
+            },
+            dailyLog: {
+                fed: [],
+                bought: []
+            },
+            hasDisease: false,
+            currentDisease: null,
+            hasDiagnosis: false
+        };
+        saveGame();
+    }
+
+    function saveGame() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    }
+
+    function updateStats() {
+        const hasPlushie = gameState.inventory.peluche > 0;
+        const hasPillow = gameState.inventory.almohadita > 0;
+        const hasFan = gameState.inventory.ventilador > 0;
+
+        let moodDecay = 0.1;
+        let lifeDecay = 0.05;
+
+        if (gameState.isSleeping) {
+            gameState.life = Math.min(100, gameState.life + (hasPillow ? 0.2 : 0.1));
+            gameState.mood = Math.min(100, gameState.mood + (hasPillow ? 0.2 : 0.1));
+        } else {
+            gameState.life = Math.max(0, gameState.life - lifeDecay);
+            gameState.mood = Math.max(0, gameState.mood - moodDecay);
+        }
+
+        if (hasPlushie) {
+            gameState.mood = Math.min(100, gameState.mood + 0.05);
+        }
+
+        if (!gameState.hasDisease) {
+            gameState.illness = Math.min(100, gameState.illness + 0.2); // Más rápido
+            if (gameState.illness >= 50 && Math.random() < 0.005) {
+                const diseaseKeys = Object.keys(diseases);
+                const randomDisease = diseaseKeys[Math.floor(Math.random() * diseaseKeys.length)];
+                gameState.currentDisease = diseases[randomDisease];
+                gameState.hasDisease = true;
+                showSpeechBubble("¡No me siento muy bien, papi! 🤒");
+            }
+        } else {
+            const disease = gameState.currentDisease;
+            gameState.illness = Math.min(100, gameState.illness + 0.5); // Más rápido
+            gameState.life = Math.max(0, gameState.life - disease.effects.lifeDecay);
+            gameState.mood = Math.max(0, gameState.mood - disease.effects.moodDecay);
+            
+            if (disease.effects.tempDrift !== undefined) {
+                 gameState.temp = Math.min(100, Math.max(0, gameState.temp + disease.effects.tempDrift));
+            }
+        }
+
+        const tempDelta = Math.abs(gameState.temp - 50);
+        const tempPenalty = tempDelta * 0.005;
+        gameState.life = Math.max(0, gameState.life - tempPenalty);
+        gameState.mood = Math.max(0, gameState.mood - tempPenalty);
+
+        if (isAC_on && gameState.inventory.aireAcondicionado > 0) {
+            gameState.temp = Math.max(0, gameState.temp - 1.5);
+            if (gameState.temp < 20) {
+                showSpeechBubble("¡Apaga el aire acondicionado, me estoy congelando!");
+                gameState.life = Math.max(0, gameState.life - 2);
+            }
+        } else if (hasFan) {
+            if (gameState.temp > 50) gameState.temp = Math.max(50, gameState.temp - 0.2);
+            if (gameState.temp < 50) gameState.temp = Math.min(50, gameState.temp + 0.2);
+        } else {
+            const drift = (Math.random() - 0.5) * (maxTempDrift - minTempDrift) + minTempDrift;
+            gameState.temp = Math.min(100, Math.max(0, gameState.temp + drift));
+        }
+
+        if (gameState.life <= 0 || gameState.mood <= 0) {
+            endGame();
+        }
+    }
+
+    function updateUI() {
+        lifeFill.style.width = `${gameState.life}%`;
+        moodFill.style.width = `${gameState.mood}%`;
+        tempFill.style.width = `${gameState.temp}%`;
+        illnessFill.style.width = `${gameState.illness}%`;
+        pointsDisplay.textContent = gameState.points;
+
+        babyDisplay.classList.remove('asleep', 'shivering', 'sweating', 'angry', 'sad', 'surprised', 'ill', 'very-ill');
+
+        if (gameState.isSleeping) {
+            babyDisplay.classList.add('asleep');
+            sleepButton.textContent = 'Despertar ☀️';
+        } else {
+            sleepButton.textContent = 'Dormir 😴';
+        }
+        if (gameState.temp < 30) babyDisplay.classList.add('shivering');
+        if (gameState.temp > 70) babyDisplay.classList.add('sweating');
+        if (gameState.illness >= 50) babyDisplay.classList.add('ill');
+        if (gameState.illness >= 90) babyDisplay.classList.add('very-ill');
+
+        if (!gameState.babyImage) {
+             babyDisplay.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ffdab9'/></svg>";
+        } else {
+            babyDisplay.src = gameState.babyImage;
+        }
+
+        renderInventoryItems();
+        updateButtonVisibility();
+        updateDailyReport();
+    }
+
+    function updateDailyReport() {
+        const reportItems = [];
+        
+        if (gameState.dailyLog.fed.length > 0) {
+            reportItems.push(`<p class="daily-report-item"><span>Comida:</span> ${gameState.dailyLog.fed.map(item => itemNames[item]).join(', ')}</p>`);
+        } else {
+            reportItems.push(`<p class="daily-report-item"><span>Comida:</span> No ha comido hoy.</p>`);
+        }
+
+        const boughtItems = Object.keys(gameState.inventory).filter(item => gameState.inventory[item] > 0);
+        if (boughtItems.length > 0) {
+            reportItems.push(`<p class="daily-report-item"><span>Objetos comprados:</span> ${boughtItems.map(item => itemNames[item]).join(', ')}</p>`);
+        } else {
+            reportItems.push(`<p class="daily-report-item"><span>Objetos comprados:</span> Ninguno.</p>`);
+        }
+
+        let moodStatus = 'feliz';
+        if (gameState.mood < 40) moodStatus = 'triste';
+        if (gameState.mood < 20) moodStatus = 'muy triste';
+
+        let lifeStatus = 'sana';
+        if (gameState.life < 40) lifeStatus = 'débil';
+        if (gameState.life < 20) lifeStatus = 'muy débil';
+
+        let tempStatus = 'normal';
+        if (gameState.temp > 70) tempStatus = 'calor';
+        if (gameState.temp < 30) tempStatus = 'frío';
+
+        let illnessStatus = 'sana';
+        if (gameState.illness >= 50) illnessStatus = 'enferma';
+        if (gameState.illness >= 90) illnessStatus = 'totalmente enferma y débil';
+
+        reportItems.push(`<p class="daily-report-item"><span>Estado de ánimo:</span> ${moodStatus}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Estado de salud:</span> ${lifeStatus}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Temperatura:</span> ${tempStatus}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Enfermedad:</span> ${illnessStatus} ${gameState.hasDisease ? `(${gameState.currentDisease.name})` : ''}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Último baño (Día):</span> ${gameState.lastActionTime.bathed}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Último pañal (Día):</span> ${gameState.lastActionTime.diapered}</p>`);
+        reportItems.push(`<p class="daily-report-item"><span>Último bibe/papilla (Día):</span> ${gameState.lastActionTime.fed}</p>`);
+
+        dailyReportPanel.innerHTML = reportItems.join('');
+    }
+
+    function renderInventoryItems() {
+        decorationsContainer.innerHTML = '';
+        let itemIndex = 0;
+        for (const item in gameState.inventory) {
+            if (gameState.inventory[item] > 0) {
+                for (let i = 0; i < gameState.inventory[item]; i++) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `decoration-item ${item}`;
+                    itemDiv.dataset.item = item;
+                    itemDiv.textContent = decorationEmojis[item] || '';
+                    itemDiv.style.top = `${20 + itemIndex * 20}px`;
+                    itemDiv.style.right = `${10 + itemIndex * 20}px`;
+                    itemDiv.title = `Clic para vender: -20 ánimo`;
+                    itemDiv.addEventListener('click', () => sellItem(item));
+                    decorationsContainer.appendChild(itemDiv);
+                }
+                itemIndex++;
+            }
+        }
+    }
+
+    function updateButtonVisibility() {
+        const isSleeping = gameState.isSleeping;
+        const actionButtons = mainGameScreen.querySelectorAll('.action-button');
+
+        actionButtons.forEach(button => {
+            button.disabled = isSleeping;
+            if (button.id === 'sleep-button') {
+                button.disabled = false;
+            }
+        });
+
+        usePotionButton.style.display = gameState.inventory.pocimaCumpleanios > 0 ? 'inline-block' : 'none';
+        toggleAcButton.style.display = gameState.inventory.aireAcondicionado > 0 ? 'inline-block' : 'none';
+        useDiagnosisButton.style.display = gameState.inventory.diagnostico > 0 ? 'inline-block' : 'none';
+        useMedicineButton.style.display = gameState.inventory.medicina > 0 ? 'inline-block' : 'none';
+
+        if (isSleeping) {
+            usePotionButton.disabled = true;
+            toggleAcButton.disabled = true;
+            useDiagnosisButton.disabled = true;
+            useMedicineButton.disabled = true;
+        } else {
+            usePotionButton.disabled = false;
+            toggleAcButton.disabled = false;
+            useDiagnosisButton.disabled = false;
+            useMedicineButton.disabled = false;
+        }
+    }
+
+    function showScreen(screen) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        screen.classList.add('active');
+    }
+
+    function showSpeechBubble(message) {
+        clearTimeout(speechBubbleTimeout);
+        speechBubble.textContent = message;
+        speechBubble.style.display = 'block';
+
+        speechBubbleTimeout = setTimeout(() => {
+            speechBubble.style.display = 'none';
+        }, 3000);
+    }
+
+    function startGame() {
+        showScreen(mainGameScreen);
+        resetGameState();
+        gameState.babyImage = startBabyPreview.src;
+        saveGame();
+        startMainGame();
+    }
+
+    function startMainGame() {
+        clearInterval(gameInterval);
+        clearInterval(timeInterval);
+        clearInterval(dialogueInterval);
+        gameInterval = setInterval(() => {
+            updateStats();
+            updateUI();
+            saveGame();
+        }, 1000);
+
+        timeInterval = setInterval(() => {
+            gameState.time++;
+            if (gameState.time >= 24) {
+                gameState.time = 0;
+                gameState.day++;
+                gameState.dailyLog = { fed: [], bought: [] };
+            }
+            dayDisplay.textContent = gameState.day;
+            timeDisplay.textContent = `${String(gameState.time).padStart(2, '0')}:00`;
+        }, 1000);
+
+        dialogueInterval = setInterval(showRandomDialogue, 4000);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(timeInterval);
+        clearInterval(dialogueInterval);
+        showScreen(deathScreen);
+        localStorage.removeItem(STORAGE_KEY);
+    }
+
+    function generateBabyDialogue() {
+        if (gameState.isSleeping) {
+            const messages = ["zzZzZ...", "Déjame dormir, papi.", "Estoy soñando con pingüinos...", "zzZ... 😴"];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        if (gameState.hasDisease) {
+            if (gameState.illness >= 90) {
+                return "Me siento muy débil, no puedo... 😩";
+            } else if (gameState.illness >= 50) {
+                return gameState.currentDisease.dialogue;
+            } else if (gameState.illness > 0) {
+                return "Me siento un poco mejor, gracias papi. 😊";
+            }
+        }
+
+        if (gameState.life < 30) {
+            const messages = ["Papi, tengo hambre. 🍼", "Quiero mi bibe... 🍼", "Necesito un poquito de papilla."];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        if (gameState.mood < 30) {
+            const messages = ["Mi pañal está sucio... 😩", "Estoy un poco triste... ¿puedes jugar conmigo?", "No me siento bien..."];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        if (gameState.temp > 70) {
+            const messages = ["¡Qué calor papi! ", "Tengo mucho calor...", "Necesito refrescarme."];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        if (gameState.temp < 30) {
+            const messages = ["Tengo mucho frío, papi... 🥶", "Necesito un abriguito...", "Brrrr... ¿puedes arroparme?"];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        if (gameState.life > 80 && gameState.mood > 80) {
+            const messages = ["¡Estoy muy feliz contigo, papi! 😊", "¡Qué bien me siento!", "¡Somos el mejor equipo del mundo! ❤️"];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        const messages = ["Hola, papi... ¿cómo estás? 🥰", "¿Qué hacemos hoy? 🤔", "Me gusta mucho mi cuna.", "Te quiero, papi srpinguino."];
+        return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    function showRandomDialogue() {
+        const message = generateBabyDialogue();
+        showSpeechBubble(message);
+    }
+
+    function handleInteraction(stat, value, timeUpdate, message) {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+
+        if (gameState.hasDisease && gameState.currentDisease.name === "Gastroenteritis" && (stat === 'life' || stat === 'mood')) {
+             gameState[stat] = Math.min(100, gameState[stat] + value / 2);
+             showSpeechBubble(`¡Oh, la comida no me sienta bien! ${message}`);
+        } else {
+             gameState[stat] = Math.min(100, gameState[stat] + value);
+             showSpeechBubble(message);
+        }
+        
+        if (timeUpdate === 'diapered') {
+            gameState.mood = Math.min(100, gameState.mood + 10);
+        }
+        
+        gameState.points += 1;
+        gameState.lastActionTime[timeUpdate] = gameState.day;
+        updateUI();
+        saveGame();
+    }
+
+    feedButton.addEventListener('click', () => {
+        handleInteraction('life', 10, 'fed', '¡Ñam! ¡Gracias!');
+        gameState.dailyLog.fed.push('biberon');
+    });
+    freshPapButton.addEventListener('click', () => {
+        handleInteraction('life', 20, 'fed', '¡Me encanta la papilla fresca!');
+        gameState.dailyLog.fed.push('papillaFresca');
+        if (gameState.hasDisease && gameState.currentDisease.cure === "papillaFresca") {
+            gameState.illness = Math.max(0, gameState.illness - 20);
+            showSpeechBubble("Me siento un poco mejor de la barriga.");
+        }
+    });
+    diaperButton.addEventListener('click', () => handleInteraction('mood', 10, 'diapered', '¡Mucho mejor! ¡Qué alivio!'));
+    
+    // Bañar ahora causa una baja de temperatura
+    batheButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        handleInteraction('mood', 15, 'bathed', '¡Qué agüita más rica, pero hace un poco de frío!');
+        gameState.temp = Math.max(0, gameState.temp - 10);
+        if (!gameState.hasDisease && gameState.illness > 30) {
+            const diseaseKeys = Object.keys(diseases);
+            const randomDisease = diseaseKeys[Math.floor(Math.random() * diseaseKeys.length)];
+            gameState.currentDisease = diseases[randomDisease];
+            gameState.hasDisease = true;
+            showSpeechBubble("¡Uff! Creo que la ducha me dio frío, ¡me duele la garganta!");
+        }
+        
+        if (gameState.hasDisease && gameState.currentDisease.cure === "bañar") {
+            gameState.illness = Math.max(0, gameState.illness - 20);
+            showSpeechBubble("El agua me refresca, gracias papi.");
+        }
+        updateUI();
+        saveGame();
+    });
+
+    playButton.addEventListener('click', () => handleInteraction('mood', 20, 'played', '¡Juguemos más!'));
+    
+    tuckInButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Ya estoy arropada, déjame dormir...");
+            return;
+        }
+        gameState.life = Math.min(100, gameState.life + 5);
+        gameState.mood = Math.min(100, gameState.mood + 5);
+        gameState.temp = Math.min(100, gameState.temp + 10);
+        gameState.lastActionTime.tuckIn = gameState.day;
+        showSpeechBubble('¡Qué calidez! Me siento muy a gusto.');
+        if (gameState.hasDisease && gameState.currentDisease.cure === "arropar") {
+            gameState.illness = Math.max(0, gameState.illness - 20);
+            showSpeechBubble("El calorcito me está ayudando con el resfriado.");
+        }
+        updateUI();
+        saveGame();
+    });
+
+    sleepButton.addEventListener('click', () => {
+        gameState.isSleeping = !gameState.isSleeping;
+        gameState.lastActionTime.slept = gameState.day;
+        if (gameState.isSleeping) {
+            showSpeechBubble("zzZ...");
+        } else {
+            showSpeechBubble("¡Ya desperté! ¡Hola!");
+        }
+        updateUI();
+        saveGame();
+    });
+
+    minigameButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        showScreen(minigameScreen);
+        minigameCanvas.width = minigameCanvas.clientWidth;
+        minigameCanvas.height = minigameCanvas.clientHeight;
+        startMinigame();
+    });
+
+    shopButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        showScreen(shopScreen);
+        shopPointsDisplay.textContent = gameState.points;
+    });
+
+    usePotionButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        if (gameState.inventory.pocimaCumpleanios > 0) {
+            gameState.inventory.pocimaCumpleanios--;
+            gameState.day += 365;
+            showSpeechBubble("¡Feliz cumpleaños! 🎉");
+            updateUI();
+            saveGame();
+        }
+    });
+
+    toggleAcButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        if (gameState.inventory.aireAcondicionado > 0) {
+            isAC_on = !isAC_on;
+            toggleAcButton.textContent = `AC ${isAC_on ? 'On' : 'Off'}`;
+            showSpeechBubble(`Aire Acondicionado: ${isAC_on ? 'Encendido' : 'Apagado'}`);
+        }
+    });
+    
+    useDiagnosisButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        if (gameState.inventory.diagnostico > 0) {
+            gameState.inventory.diagnostico--;
+            if (gameState.hasDisease) {
+                gameState.hasDiagnosis = true;
+                showSpeechBubble(`El Parking Diagnóstico dice que tengo ${gameState.currentDisease.name}. ¡Necesito un poco de ${gameState.currentDisease.cure} para sentirme mejor!`);
+            } else {
+                showSpeechBubble("¡No estoy enferma! ¡Todo bien!");
+            }
+            updateUI();
+            saveGame();
+        } else {
+            showSpeechBubble("¡No tienes un Parking Diagnóstico!");
+        }
+    });
+    
+    useMedicineButton.addEventListener('click', () => {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        if (gameState.inventory.medicina > 0) {
+            if (gameState.hasDiagnosis) {
+                gameState.inventory.medicina--;
+                gameState.illness = Math.max(0, gameState.illness - 50);
+                if (gameState.illness <= 0) {
+                    gameState.hasDisease = false;
+                    gameState.hasDiagnosis = false;
+                    gameState.currentDisease = null;
+                    showSpeechBubble("¡Me siento mucho mejor, papi! ¡Gracias por la medicina! 😊");
+                } else {
+                    showSpeechBubble("¡La medicina me está ayudando!");
+                }
+            } else {
+                showSpeechBubble("¡Papi! No sé qué enfermedad tengo, esto podría hacerme daño. 🍼");
+                gameState.life = Math.max(0, gameState.life - 10);
+            }
+            updateUI();
+            saveGame();
+        } else {
+            showSpeechBubble("¡No tienes medicina!");
+        }
+    });
+
+    // Nueva lógica de selección de imagen
+    const imageOptions = document.querySelectorAll('.image-option');
+    imageOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            imageOptions.forEach(img => img.classList.remove('selected'));
+            option.classList.add('selected');
+            startBabyPreview.src = option.src;
+            babyUpload.value = ''; // Clear file input
+        });
+    });
+
+    babyUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                startBabyPreview.src = e.target.result;
+                imageOptions.forEach(img => img.classList.remove('selected'));
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    startGameButton.addEventListener('click', () => {
+        startGame();
+    });
+
+    let minigameState = {
+        player: { x: 50, y: 0, width: 50, height: 50, dy: 0, gravity: 0.5, jumpPower: -10, isJumping: false },
+        obstacles: [],
+        score: 0,
+        gameRunning: false,
+        image: new Image()
+    };
+    minigameState.image.src = 'Masters1.png';
+
+    function startMinigame() {
+        minigameState.score = 0;
+        minigameState.gameRunning = true;
+        minigameState.player.y = minigameCanvas.height - minigameState.player.height;
+        minigameState.obstacles = [];
+        minigamePointsDisplay.textContent = minigameState.score;
+
+        let lastObstacleTime = 0;
+        function generateObstacles(timestamp) {
+            if (!minigameState.gameRunning) return;
+            if (timestamp - lastObstacleTime > 1500) {
+                minigameState.obstacles.push({
+                    x: minigameCanvas.width,
+                    y: minigameCanvas.height - 30,
+                    width: 20,
+                    height: 30,
+                    speed: 5
+                });
+                lastObstacleTime = timestamp;
+            }
+            requestAnimationFrame(generateObstacles);
+        }
+
+        gameLoop();
+        requestAnimationFrame(generateObstacles);
+    }
+
+    function gameLoop() {
+        if (!minigameState.gameRunning) return;
+        updateMinigame();
+        drawMinigame();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updateMinigame() {
+        // Player
+        minigameState.player.dy += minigameState.player.gravity;
+        minigameState.player.y += minigameState.player.dy;
+        if (minigameState.player.y >= minigameCanvas.height - minigameState.player.height) {
+            minigameState.player.y = minigameCanvas.height - minigameState.player.height;
+            minigameState.player.isJumping = false;
+        }
+
+        // Obstacles
+        minigameState.obstacles.forEach(obs => {
+            obs.x -= obs.speed;
+        });
+
+        // Check for passed obstacles
+        if (minigameState.obstacles.length > 0 && minigameState.obstacles[0].x + minigameState.obstacles[0].width < minigameState.player.x) {
+            minigameState.score++;
+            minigamePointsDisplay.textContent = minigameState.score;
+            minigameState.obstacles.shift(); // Remove passed obstacle
+        }
+
+        checkCollisions();
+    }
+
+    function drawMinigame() {
+        ctx.clearRect(0, 0, minigameCanvas.width, minigameCanvas.height);
+        
+        // Ground
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(0, minigameCanvas.height - 10, minigameCanvas.width, 10);
+        
+        // Player
+        ctx.drawImage(minigameState.image, minigameState.player.x, minigameState.player.y, minigameState.player.width, minigameState.player.height);
+
+        // Obstacles (white squares)
+        ctx.fillStyle = '#ffffff';
+        minigameState.obstacles.forEach(obs => {
+            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        });
+    }
+
+    function checkCollisions() {
+        minigameState.obstacles.forEach(obs => {
+            if (minigameState.player.x < obs.x + obs.width &&
+                minigameState.player.x + minigameState.player.width > obs.x &&
+                minigameState.player.y < obs.y + obs.height &&
+                minigameState.player.y + minigameState.player.height > obs.y) {
+                minigameState.gameRunning = false;
+                gameState.points += minigameState.score;
+                saveGame();
+                updateUI();
+                showSpeechBubble(`¡Ganaste ${minigameState.score} puntos en el minijuego!`);
+                exitMinigameButton.click();
+            }
+        });
+    }
+
+    function jump() {
+        if (!minigameState.player.isJumping) {
+            minigameState.player.isJumping = true;
+            minigameState.player.dy = minigameState.player.jumpPower;
+        }
+    }
+
+    jumpButton.addEventListener('click', jump);
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && minigameState.gameRunning) {
+            jump();
+        }
+    });
+
+    exitMinigameButton.addEventListener('click', () => {
+        minigameState.gameRunning = false;
+        showScreen(mainGameScreen);
+    });
+
+    backToGameButton.addEventListener('click', () => {
+        showScreen(mainGameScreen);
+    });
+
+    buyItemButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const item = button.dataset.item;
+            const cost = parseInt(button.dataset.cost);
+            if (gameState.points >= cost) {
+                gameState.points -= cost;
+                gameState.inventory[item]++;
+                if (itemCosts[item]) {
+                     gameState.dailyLog.bought.push(item);
+                }
+                showSpeechBubble(`¡Compraste ${itemNames[item]}!`);
+                updateUI();
+                shopPointsDisplay.textContent = gameState.points;
+                saveGame();
+            } else {
+                showSpeechBubble("¡No tienes suficientes puntos!");
+            }
+        });
+    });
+
+    // Vender ahora devuelve el 100% del costo original
+    function sellItem(item) {
+        if (gameState.inventory[item] > 0) {
+            gameState.inventory[item]--;
+            gameState.points += itemCosts[item];
+            gameState.mood = Math.max(0, gameState.mood - 20);
+            showSpeechBubble(`Vendiste un ${itemNames[item]}. ¡A Masters Jr. no le gustó!`);
+            updateUI();
+            saveGame();
+        }
+    }
+
+    restartGameButton.addEventListener('click', () => {
+        startGame();
+    });
+
+    saveApiKeyButton.addEventListener('click', () => {
+        chatApiKey = apiKeyInput.value.trim();
+        if (chatApiKey) {
+            localStorage.setItem('chatApiKey', chatApiKey);
+            chatOutput.innerHTML += `<p style="color: #34d399; font-style: italic;">Clave de API guardada. ¡Puedes chatear!</p>`;
+        } else {
+            chatOutput.innerHTML += `<p style="color: #e74c3c; font-style: italic;">Por favor, ingresa una clave de API válida.</p>`;
+        }
+    });
+
+    sendChatButton.addEventListener('click', handleChat);
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleChat();
+        }
+    });
+
+    async function handleChat() {
+        if (gameState.isSleeping) {
+            showSpeechBubble("Shhh, está durmiendo...");
+            return;
+        }
+        if (!chatApiKey) {
+            chatOutput.innerHTML += `<p style="color: #e74c3c; font-style: italic;">Por favor, guarda tu clave de API para chatear.</p>`;
+            return;
+        }
+
+        const userMessage = chatInput.value.trim();
+        if (userMessage === '') return;
+
+        chatOutput.innerHTML += `<p><span class="chat-user">Tú:</span> ${userMessage}</p>`;
+        chatInput.value = '';
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        const loadingMessage = document.createElement('p');
+        loadingMessage.className = 'chat-loading';
+        loadingMessage.textContent = 'Masters Jr. está pensando...';
+        chatOutput.appendChild(loadingMessage);
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        if (chatHistory.length > 10) {
+            chatHistory = chatHistory.slice(chatHistory.length - 10);
+        }
+        chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+        try {
+            const systemPrompt = `Actúa como Masters Jr., un bebé feliz y juguetón. Responde a las preguntas de una manera simple, como un bebé que solo puede hablar un poco. Usa emojis para expresar tus emociones. Masters Jr. es muy inteligente, pero sus respuestas deben ser cortas y dulces.`;
+
+            const response = await fetch(API_URL + chatApiKey, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: chatHistory,
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    }
+                })
+            });
+
+            const data = await response.json();
+            const botMessage = data.candidates[0].content.parts[0].text;
+            chatHistory.push({ role: 'model', parts: [{ text: botMessage }] });
+
+            loadingMessage.remove();
+            chatOutput.innerHTML += `<p><span class="chat-baby">Masters Jr.:</span> ${botMessage}</p>`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        } catch (error) {
+            console.error('Error al chatear con la API:', error);
+            loadingMessage.remove();
+            chatOutput.innerHTML += `<p style="color: #e74c3c; font-style: italic;">¡Ups! Algo salió mal. Inténtalo de nuevo.</p>`;
+        }
+    }
+
+    window.onload = function() {
+        initGame();
+    };
+
+</script>
+
+</body>
+</html>
